@@ -5,7 +5,7 @@ import com.example.fooddelivery.order.Order;
 import com.example.fooddelivery.order.OrderItem;
 import com.example.fooddelivery.order.OrderManager;
 import com.example.fooddelivery.order.OrderStatus;
-import com.example.fooddelivery.search.RestaurantSearchStrategy;
+import com.example.fooddelivery.search.*;
 import com.example.fooddelivery.strategy.DeliveryAssignmentStrategy;
 
 import java.util.ArrayList;
@@ -21,8 +21,24 @@ public class FoodDeliveryService {
     private final Map<String, DeliveryAgent> deliveryAgents = new ConcurrentHashMap<>();
     private final OrderManager orderManager = new OrderManager();
     private DeliveryAssignmentStrategy assignmentStrategy;
+    private final RestaurantSearchHandler restaurantSearchChain;
 
-    private FoodDeliveryService() {}
+    private FoodDeliveryService() {
+        RestaurantSearchHandler cityHandler =
+                new SearchByCityHandler();
+
+        RestaurantSearchHandler proximityHandler =
+                new SearchByProximityHandler();
+
+        RestaurantSearchHandler menuKeywordHandler =
+                new SearchByMenuKeywordHandler();
+
+        cityHandler
+                .setNext(proximityHandler)
+                .setNext(menuKeywordHandler);
+
+        this.restaurantSearchChain = cityHandler;
+    }
 
     public static FoodDeliveryService getInstance() {
         if (instance == null) {
@@ -75,17 +91,16 @@ public class FoodDeliveryService {
         orderManager.cancelOrder(orderId);
     }
 
-    public List<Restaurant> searchRestaurants(List<RestaurantSearchStrategy> strategies) {
-        // Start with the full list of restaurants
-        List<Restaurant> results = new ArrayList<>(restaurants.values());
+    public List<Restaurant> searchRestaurants(
+            RestaurantSearchCriteria criteria) {
 
-        // Sequentially apply each filter strategy
-        // We can also use chain of responsibility design pattern here
-        for (RestaurantSearchStrategy strategy : strategies) {
-            results = strategy.filter(results);
-        }
+        List<Restaurant> allRestaurants =
+                new ArrayList<>(restaurants.values());
 
-        return results;
+        return restaurantSearchChain.handle(
+                criteria,
+                allRestaurants
+        );
     }
 
     public Menu getRestaurantMenu(String restaurantId) {

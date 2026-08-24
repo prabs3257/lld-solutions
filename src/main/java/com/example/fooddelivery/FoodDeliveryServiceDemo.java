@@ -3,10 +3,7 @@ package com.example.fooddelivery;
 import com.example.fooddelivery.entity.*;
 import com.example.fooddelivery.order.OrderItem;
 import com.example.fooddelivery.order.OrderStatus;
-import com.example.fooddelivery.search.RestaurantSearchStrategy;
-import com.example.fooddelivery.search.SearchByCityStrategy;
-import com.example.fooddelivery.search.SearchByMenuKeywordStrategy;
-import com.example.fooddelivery.search.SearchByProximityStrategy;
+import com.example.fooddelivery.search.*;
 import com.example.fooddelivery.strategy.NearestAvailableAgentStrategy;
 
 import java.util.List;
@@ -37,35 +34,110 @@ public class FoodDeliveryServiceDemo {
         tacoTown.addToMenu(new MenuItem("T001", "Crunchy Taco", 3.50));
 
         // 5. Demonstrate Search Functionality
+
         System.out.println("\n--- 1. Searching for Restaurants ---");
 
-        // (A) Search by City
-        System.out.println("\n(A) Restaurants in 'Springfield':");
-        List<RestaurantSearchStrategy> citySearch = List.of(new SearchByCityStrategy("Springfield"));
-        List<Restaurant> springfieldRestaurants = service.searchRestaurants(citySearch);
-        springfieldRestaurants.forEach(r -> System.out.println("  - " + r.getName()));
+// ----------------------------------------------------
+// A. Search by City
+// ----------------------------------------------------
 
-        // (B) Search for restaurants near Alice
-        System.out.println("\n(B) Restaurants near Alice (within 0.01 distance units):");
-        List<RestaurantSearchStrategy> proximitySearch = List.of(new SearchByProximityStrategy(aliceAddress, 0.01));
-        List<Restaurant> nearbyRestaurants = service.searchRestaurants(proximitySearch);
-        nearbyRestaurants.forEach(r -> System.out.printf("  - %s (Distance: %.4f)\n", r.getName(), aliceAddress.distanceTo(r.getAddress())));
-
-        // (C) Search for restaurants that serve 'Pizza'
-        System.out.println("\n(C) Restaurants that serve 'Pizza':");
-        List<RestaurantSearchStrategy> menuSearch = List.of(new SearchByMenuKeywordStrategy("Pizza"));
-        List<Restaurant> pizzaRestaurants = service.searchRestaurants(menuSearch);
-        pizzaRestaurants.forEach(r -> System.out.println("  - " + r.getName()));
-
-        // (D) Combined Search: Find restaurants near Alice that serve 'Burger'
-        System.out.println("\n(D) Burger joints near Alice:");
-        List<RestaurantSearchStrategy> combinedSearch = List.of(
-                new SearchByProximityStrategy(aliceAddress, 0.01),
-                new SearchByMenuKeywordStrategy("Burger")
+        System.out.println(
+                "\n(A) Restaurants in 'Springfield':"
         );
-        List<Restaurant> burgerJointsNearAlice = service.searchRestaurants(combinedSearch);
-        burgerJointsNearAlice.forEach(r -> System.out.println("  - " + r.getName()));
 
+        RestaurantSearchCriteria cityCriteria =
+                new RestaurantSearchCriteria()
+                        .setCity("Springfield");
+
+        List<Restaurant> springfieldRestaurants =
+                service.searchRestaurants(cityCriteria);
+
+        springfieldRestaurants.forEach(
+                restaurant ->
+                        System.out.println(
+                                " - " + restaurant.getName()
+                        )
+        );
+
+// ----------------------------------------------------
+// B. Search by Proximity
+// ----------------------------------------------------
+
+        System.out.println(
+                "\n(B) Restaurants near Alice "
+                        + "(within 0.01 distance units):"
+        );
+
+        RestaurantSearchCriteria proximityCriteria =
+                new RestaurantSearchCriteria()
+                        .setProximity(
+                                aliceAddress,
+                                0.01
+                        );
+
+        List<Restaurant> nearbyRestaurants =
+                service.searchRestaurants(
+                        proximityCriteria
+                );
+
+        nearbyRestaurants.forEach(
+                restaurant ->
+                        System.out.printf(
+                                " - %s (Distance: %.4f)%n",
+                                restaurant.getName(),
+                                aliceAddress.distanceTo(
+                                        restaurant.getAddress()
+                                )
+                        )
+        );
+
+// ----------------------------------------------------
+// C. Search by Menu Keyword
+// ----------------------------------------------------
+
+        System.out.println(
+                "\n(C) Restaurants that serve 'Pizza':"
+        );
+
+        RestaurantSearchCriteria pizzaCriteria =
+                new RestaurantSearchCriteria()
+                        .setMenuKeyword("Pizza");
+
+        List<Restaurant> pizzaRestaurants =
+                service.searchRestaurants(
+                        pizzaCriteria
+                );
+
+        pizzaRestaurants.forEach(
+                restaurant ->
+                        System.out.println(
+                                " - " + restaurant.getName()
+                        )
+        );
+
+// ----------------------------------------------------
+// D. Combined Search
+// ----------------------------------------------------
+
+        System.out.println(
+                "\n(D) Burger joints near Alice:"
+        );
+        RestaurantSearchCriteria burgerNearAliceCriteria =
+                new RestaurantSearchCriteria()
+                        .setProximity(
+                                aliceAddress,
+                                0.01
+                        )
+                        .setMenuKeyword("Burger");
+
+        List<Restaurant> burgerJointsNearAlice =
+                service.searchRestaurants(
+                        burgerNearAliceCriteria
+                );
+        burgerJointsNearAlice.forEach(
+                restaurant ->
+                        System.out.println(" - " + restaurant.getName())
+        );
         // 6. Demonstrate Browsing a Menu
         System.out.println("\n--- 2. Browsing a Menu ---");
         System.out.println("\nMenu for 'Pizza Palace':");
